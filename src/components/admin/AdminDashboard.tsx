@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, Users, Music, Settings, Database } from 'lucide-react';
+import AdminLayout from './AdminLayout';
 
 interface AccountRequest {
   id: string;
@@ -194,26 +195,29 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Chargement du tableau de bord...</p>
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Chargement des données...</p>
+          </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   const pendingRequests = accountRequests.filter(req => req.status === 'pending');
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold gradient-text">Tableau de Bord Admin</h1>
-          <Badge variant="secondary" className="text-sm">
-            <Settings className="w-4 h-4 mr-1" />
-            Administration
-          </Badge>
+    <AdminLayout>
+      <div className="space-y-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-foreground mb-2">
+            Tableau de Bord Admin
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Gérez les demandes de compte et surveillez l'activité
+          </p>
         </div>
 
         {/* Statistics Cards */}
@@ -420,6 +424,6 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
