@@ -13,21 +13,32 @@ export default function GalacticCore() {
 
     const time = state.clock.elapsedTime;
     
-    // Main core rotation
-    meshRef.current.rotation.y += 0.01 + bassLevel * 0.02;
-    meshRef.current.rotation.z = Math.sin(time * 0.5) * 0.1;
+    // Main core rotation with bass boost
+    const bassRotationSpeed = 0.01 + bassLevel * 0.05;
+    meshRef.current.rotation.y += bassRotationSpeed;
+    meshRef.current.rotation.z = Math.sin(time * 0.5) * 0.1 + bassLevel * 0.3;
     
-    // Inner core counter-rotation
-    innerRef.current.rotation.y -= 0.015 + midLevel * 0.03;
-    innerRef.current.rotation.x = Math.cos(time * 0.3) * 0.15;
+    // Inner core counter-rotation with mid frequencies
+    const midRotationSpeed = 0.015 + midLevel * 0.08;
+    innerRef.current.rotation.y -= midRotationSpeed;
+    innerRef.current.rotation.x = Math.cos(time * 0.3) * 0.15 + midLevel * 0.2;
     
-    // Scale pulsing with beat
-    const scale = 1 + (beatDetected ? 0.3 : bassLevel * 0.2);
-    meshRef.current.scale.setScalar(scale);
+    // Scale pulsing with beat - more dramatic
+    const baseScale = 1.2;
+    const beatScale = beatDetected ? 1.8 : 1 + bassLevel * 0.8;
+    const finalScale = baseScale * beatScale;
+    meshRef.current.scale.setScalar(finalScale);
     
-    // Inner core scaling
-    const innerScale = 0.7 + midLevel * 0.5;
+    // Inner core scaling with mid frequencies
+    const innerBaseScale = 0.7;
+    const innerScale = innerBaseScale + midLevel * 1.2 + (beatDetected ? 0.5 : 0);
     innerRef.current.scale.setScalar(innerScale);
+    
+    // Vertical movement with bass
+    const coreGroup = meshRef.current.parent;
+    if (coreGroup) {
+      coreGroup.position.y = Math.sin(time * 2) * 0.5 + bassLevel * 2;
+    }
   });
 
   return (

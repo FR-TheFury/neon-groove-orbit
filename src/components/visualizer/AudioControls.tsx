@@ -29,40 +29,70 @@ export default function AudioControls({ audioUrl }: AudioControlsProps) {
     const audio = audioRef.current;
     if (!audio || !audioUrl) return;
 
-    audio.src = audioUrl;
-    
-    const handleLoadedMetadata = () => {
-      setDuration(audio.duration);
-      initializeAudio(audio);
+    const setupAudio = async () => {
+      audio.src = audioUrl;
+      audio.crossOrigin = "anonymous";
+      audio.preload = "metadata";
+      
+      const handleLoadedMetadata = async () => {
+        console.log('Audio metadata loaded, duration:', audio.duration);
+        setDuration(audio.duration);
+        try {
+          await initializeAudio(audio);
+          console.log('Audio context initialized');
+        } catch (error) {
+          console.error('Error initializing audio:', error);
+        }
+      };
+
+      const handleTimeUpdate = () => {
+        setCurrentTime(audio.currentTime);
+        updateFrequencyData();
+      };
+
+      const handleEnded = () => {
+        setPlaying(false);
+      };
+
+      const handleCanPlay = () => {
+        console.log('Audio can play');
+      };
+
+      const handleError = (e: Event) => {
+        console.error('Audio error:', e);
+      };
+
+      audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.addEventListener('timeupdate', handleTimeUpdate);
+      audio.addEventListener('ended', handleEnded);
+      audio.addEventListener('canplay', handleCanPlay);
+      audio.addEventListener('error', handleError);
+
+      // Force load
+      audio.load();
+
+      return () => {
+        audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.removeEventListener('timeupdate', handleTimeUpdate);
+        audio.removeEventListener('ended', handleEnded);
+        audio.removeEventListener('canplay', handleCanPlay);
+        audio.removeEventListener('error', handleError);
+      };
     };
 
-    const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime);
-      updateFrequencyData();
-    };
-
-    const handleEnded = () => {
-      setPlaying(false);
-    };
-
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('ended', handleEnded);
-
-    return () => {
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('ended', handleEnded);
-    };
+    setupAudio();
   }, [audioUrl, setDuration, setCurrentTime, setPlaying, initializeAudio, updateFrequencyData]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (isPlaying) {
-      audio.play().catch(console.error);
-    } else {
+    if (isPlaying && audio.paused) {
+      audio.play().catch((error) => {
+        console.error('Error playing audio:', error);
+        setPlaying(false);
+      });
+    } else if (!isPlaying && !audio.paused) {
       audio.pause();
     }
   }, [isPlaying]);
@@ -75,9 +105,25 @@ export default function AudioControls({ audioUrl }: AudioControlsProps) {
   }, [volume]);
 
   const togglePlay = async () => {
-    // Resume audio context if needed
-    await resumeAudioContext();
-    setPlaying(!isPlaying);
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    try {
+      // Resume audio context if needed
+      await resumeAudioContext();
+      
+      if (!isPlaying) {
+        console.log('Attempting to play audio...');
+        await audio.play();
+        console.log('Audio playing successfully');
+        setPlaying(true);
+      } else {
+        audio.pause();
+        setPlaying(false);
+      }
+    } catch (error) {
+      console.error('Error toggling play:', error);
+    }
   };
 
   const handleSeek = (value: number[]) => {
@@ -105,7 +151,12 @@ export default function AudioControls({ audioUrl }: AudioControlsProps) {
 
   return (
     <>
-      <audio ref={audioRef} preload="metadata" />
+      <audio 
+        ref={audioRef} 
+        preload="metadata" 
+        crossOrigin="anonymous"
+        controls={false}
+      />
       
       <Card className="glass p-4 space-y-4">
         {/* Play/Pause Button */}
