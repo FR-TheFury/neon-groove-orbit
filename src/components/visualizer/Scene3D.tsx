@@ -53,13 +53,11 @@ export default function Scene3D() {
         <Environment preset="night" />
         <fog attach="fog" args={[new Color('#000510'), 20, 100]} />
 
-        {/* Galactic Components */}
+        {/* Core Galactic Components Only */}
         <Suspense fallback={null}>
           <StarField />
-          <NebulaParticles />
           <GalacticCore />
           <FrequencyRings />
-          <EnergyBeams />
         </Suspense>
 
         {/* Enhanced Cosmic Environment */}

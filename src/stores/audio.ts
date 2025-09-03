@@ -61,9 +61,9 @@ export const useAudioStore = create<AudioState>((set, get) => ({
       const analyser = audioContext.createAnalyser();
       const source = audioContext.createMediaElementSource(audioElement);
       
-      // Optimized for performance and responsiveness
-      analyser.fftSize = 512;
-      analyser.smoothingTimeConstant = 0.2;
+      // Ultra-fast response for 2D-like fluidity
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.1;
       
       source.connect(analyser);
       analyser.connect(audioContext.destination);
@@ -112,11 +112,11 @@ export const useAudioStore = create<AudioState>((set, get) => ({
       const midLevel = midSum / (midEnd - bassEnd) / 255;
       const trebleLevel = trebleSum / (bufferLength - midEnd) / 255;
       
-      // Smooth interpolation for fluid motion
+      // Ultra-fast interpolation for instant visual response
       const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-      const newSmoothedBass = lerp(smoothedBass, bassLevel, 0.3);
-      const newSmoothedMid = lerp(smoothedMid, midLevel, 0.3);
-      const newSmoothedTreble = lerp(smoothedTreble, trebleLevel, 0.3);
+      const newSmoothedBass = lerp(smoothedBass, bassLevel, 0.7);
+      const newSmoothedMid = lerp(smoothedMid, midLevel, 0.7);
+      const newSmoothedTreble = lerp(smoothedTreble, trebleLevel, 0.7);
       
       // Enhanced beat detection
       const beatDetected = bassLevel > 0.25 && bassLevel > smoothedBass * 1.4;

@@ -13,29 +13,24 @@ export default function GalacticCore() {
 
     const time = state.clock.elapsedTime;
     
-    // Optimized rotation calculations
-    const bassRotationSpeed = 0.015 + smoothedBass * 0.08;
-    const midRotationSpeed = 0.02 + smoothedMid * 0.1;
+    // Ultra-fast rotation for immediate response
+    meshRef.current.rotation.y += 0.02 + smoothedBass * 0.15;
+    meshRef.current.rotation.z = smoothedBass * 0.8;
     
-    meshRef.current.rotation.y += bassRotationSpeed;
-    meshRef.current.rotation.z = Math.sin(time * 0.8) * 0.2 + smoothedBass * 0.5;
+    innerRef.current.rotation.y -= 0.03 + smoothedMid * 0.2;
+    innerRef.current.rotation.x = smoothedMid * 0.6;
     
-    innerRef.current.rotation.y -= midRotationSpeed;
-    innerRef.current.rotation.x = Math.cos(time * 0.5) * 0.3 + smoothedMid * 0.4;
+    // Instant scale response like 2D visualizers
+    const coreScale = 1.6 + smoothedBass * 2 + (beatDetected ? 1 : 0);
+    meshRef.current.scale.setScalar(coreScale);
     
-    // Dramatic beat-responsive scaling
-    const baseScale = 1.4;
-    const beatMultiplier = beatDetected ? 2.2 : 1 + smoothedBass * 1.2;
-    meshRef.current.scale.setScalar(baseScale * beatMultiplier);
-    
-    // Enhanced inner core reactivity
-    const innerScale = 0.8 + smoothedMid * 1.5 + (beatDetected ? 0.8 : 0);
+    const innerScale = 1 + smoothedMid * 2 + (beatDetected ? 1.2 : 0);
     innerRef.current.scale.setScalar(innerScale);
     
-    // More dramatic vertical movement
+    // Instant vertical response
     const coreGroup = meshRef.current.parent;
     if (coreGroup) {
-      coreGroup.position.y = Math.sin(time * 3) * 0.8 + smoothedBass * 3;
+      coreGroup.position.y = smoothedBass * 4;
     }
   });
 

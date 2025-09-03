@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { InstancedMesh, Object3D, Color } from 'three';
 import { useAudioStore } from '@/stores/audio';
 
-const PARTICLE_COUNT = 200;
+const PARTICLE_COUNT = 30;
 
 export default function NebulaParticles() {
   const meshRef = useRef<InstancedMesh>(null);
@@ -45,17 +45,13 @@ export default function NebulaParticles() {
       // Get frequency data for this particle
       const amplitude = frequencyData[particle.freqIndex] / 255;
       
-      // Optimized orbital motion
-      particle.angle += particle.speed * (1 + smoothedBass * 3);
+      // Ultra-simplified orbital motion
+      particle.angle += particle.speed * (2 + smoothedBass * 5);
       
-      // Pre-calculated trigonometric values
-      const cosAngle = Math.cos(particle.angle);
-      const sinAngle = Math.sin(particle.angle);
-      const radiusWithAmp = particle.radius + amplitude * 3;
-      
-      const x = cosAngle * radiusWithAmp;
-      const z = sinAngle * radiusWithAmp;
-      const y = particle.originalPosition.y + Math.sin(time + particle.angle) * 1.5 + amplitude * 2;
+      const radiusWithAmp = particle.radius + amplitude * 4;
+      const x = Math.cos(particle.angle) * radiusWithAmp;
+      const z = Math.sin(particle.angle) * radiusWithAmp;
+      const y = particle.originalPosition.y + amplitude * 3;
       
       dummy.position.set(x, y, z);
       
@@ -63,12 +59,8 @@ export default function NebulaParticles() {
       const scale = particle.size * (0.6 + amplitude + smoothedMid * 0.8);
       dummy.scale.setScalar(scale);
       
-      // Rotation
-      dummy.rotation.set(
-        time * 0.5 + amplitude,
-        particle.angle,
-        time * 0.3
-      );
+      // Minimal rotation for performance
+      dummy.rotation.set(0, particle.angle, 0);
       
       dummy.updateMatrix();
       meshRef.current.setMatrixAt(i, dummy.matrix);

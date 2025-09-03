@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { InstancedMesh, Object3D, Vector3 } from 'three';
 import { useAudioStore } from '@/stores/audio';
 
-const STAR_COUNT = 300;
+const STAR_COUNT = 50;
 
 export default function StarField() {
   const meshRef = useRef<InstancedMesh>(null);
@@ -34,31 +34,21 @@ export default function StarField() {
     const time = state.clock.elapsedTime;
     
     stars.forEach((star, i) => {
-      // Optimized movement calculation
-      const speedMultiplier = star.speed * (1 + smoothedTreble * 2);
-      star.position.x += Math.cos(star.position.x * 0.01) * speedMultiplier;
-      star.position.y += Math.sin(star.position.y * 0.01) * speedMultiplier;
-      star.position.z += Math.cos(star.position.z * 0.01) * speedMultiplier;
+      // Ultra-simplified movement for performance
+      const speedMultiplier = star.speed * (1.5 + smoothedTreble * 4);
+      star.position.multiplyScalar(1 + speedMultiplier * 0.01);
       
-      // Efficient boundary check
-      const distanceSquared = star.position.x * star.position.x + 
-                             star.position.y * star.position.y + 
-                             star.position.z * star.position.z;
-      if (distanceSquared > 2500) {
+      // Reset if too far
+      if (star.position.lengthSq() > 1600) {
         star.position.multiplyScalar(0.1);
       }
       
-      // Set position and scale with interpolation
       dummy.position.copy(star.position);
-      const scale = star.size * (0.8 + smoothedMid * 1.2);
+      const scale = star.size * (1 + smoothedMid * 2);
       dummy.scale.setScalar(scale);
       
-      // Add slight rotation
-      dummy.rotation.set(
-        time * star.speed,
-        time * star.speed * 0.5,
-        0
-      );
+      // Minimal rotation for performance
+      dummy.rotation.set(0, 0, 0);
       
       dummy.updateMatrix();
       meshRef.current.setMatrixAt(i, dummy.matrix);
