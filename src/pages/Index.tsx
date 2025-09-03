@@ -20,7 +20,7 @@ const Index = () => {
   const [recentTracks, setRecentTracks] = useState<Track[]>([]);
 
   useEffect(() => {
-    if (user && role === 'user') {
+    if (user && (role === 'user' || role === 'admin')) {
       loadRecentTracks();
     }
   }, [user, role]);
@@ -140,8 +140,22 @@ const Index = () => {
           {/* Upload Section */}
           <div className="max-w-2xl mx-auto">
             {user ? (
-              role === 'user' ? (
-                <FileUploader onUploadComplete={handleUploadComplete} />
+              role === 'user' || role === 'admin' ? (
+                <div className="space-y-4">
+                  <FileUploader onUploadComplete={handleUploadComplete} />
+                  {role === 'admin' && (
+                    <Card className="glass p-6 text-center">
+                      <Shield className="w-12 h-12 mx-auto mb-3 text-neon-cyan" />
+                      <p className="text-sm text-muted-foreground mb-3">
+                        En tant qu'administrateur, vous avez accès au panel d'administration
+                      </p>
+                      <Button variant="outline" size="sm" onClick={handleAdminAccess}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        Panel Admin
+                      </Button>
+                    </Card>
+                  )}
+                </div>
               ) : role === 'pending' ? (
                 <Card className="glass p-8 text-center">
                   <Users className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
@@ -150,18 +164,6 @@ const Index = () => {
                     Votre demande de création de compte est en cours de traitement par un administrateur.
                   </p>
                   <Badge variant="outline">Statut : En attente d'approbation</Badge>
-                </Card>
-              ) : role === 'admin' ? (
-                <Card className="glass p-8 text-center">
-                  <Shield className="w-16 h-16 mx-auto mb-4 text-neon-cyan" />
-                  <h3 className="text-xl font-semibold mb-4">Mode Administrateur</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Accédez au tableau de bord administrateur pour gérer les utilisateurs et les données.
-                  </p>
-                  <Button variant="default" size="lg" onClick={handleAdminAccess}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Tableau de bord Admin
-                  </Button>
                 </Card>
               ) : (
                 <FileUploader onUploadComplete={handleUploadComplete} />
@@ -181,7 +183,7 @@ const Index = () => {
           </div>
 
           {/* Recent Tracks */}
-          {user && role === 'user' && recentTracks.length > 0 && (
+          {user && (role === 'user' || role === 'admin') && recentTracks.length > 0 && (
             <div className="max-w-2xl mx-auto mt-12">
               <h3 className="text-lg font-semibold text-neon-magenta mb-4">
                 Recent Tracks
