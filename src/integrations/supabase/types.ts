@@ -199,6 +199,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      initialize_user_if_needed: {
+        Args: { _user_id?: string }
+        Returns: undefined
+      }
       reject_account_request: {
         Args: { rejection_notes?: string; request_id: string }
         Returns: undefined
