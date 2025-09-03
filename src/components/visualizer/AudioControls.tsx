@@ -22,6 +22,7 @@ export default function AudioControls({ audioUrl }: AudioControlsProps) {
     setVolume,
     initializeAudio,
     updateFrequencyData,
+    resumeAudioContext
   } = useAudioStore();
 
   useEffect(() => {
@@ -73,7 +74,9 @@ export default function AudioControls({ audioUrl }: AudioControlsProps) {
     }
   }, [volume]);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
+    // Resume audio context if needed
+    await resumeAudioContext();
     setPlaying(!isPlaying);
   };
 

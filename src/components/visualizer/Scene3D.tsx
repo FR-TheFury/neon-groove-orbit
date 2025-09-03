@@ -1,61 +1,73 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, PerspectiveCamera } from '@react-three/drei';
 import { Suspense } from 'react';
-import VinylRecord from './VinylRecord';
-import SpectrumRing from './SpectrumRing';
+import GalacticCore from './GalacticCore';
+import StarField from './StarField';
+import NebulaParticles from './NebulaParticles';
+import FrequencyRings from './FrequencyRings';
+import EnergyBeams from './EnergyBeams';
 import { Color } from 'three';
+import { useAudioStore } from '@/stores/audio';
 
 export default function Scene3D() {
+  const { beatDetected, bassLevel } = useAudioStore();
+
   return (
     <div className="w-full h-full">
-      <Canvas gl={{ antialias: true }}>
-        <PerspectiveCamera makeDefault position={[6, 3, 6]} fov={60} />
-        
-        {/* Lighting */}
-        <ambientLight intensity={0.2} />
-        <pointLight position={[10, 10, 10]} intensity={1} color="#35F0FF" />
-        <pointLight position={[-10, 5, -10]} intensity={0.5} color="#FF4FD8" />
-        <spotLight
-          position={[0, 10, 0]}
-          angle={0.3}
-          penumbra={0.5}
-          intensity={1}
-          color="#9E6BFF"
-          castShadow
+      <Canvas gl={{ antialias: true, alpha: true }}>
+        <PerspectiveCamera 
+          makeDefault 
+          position={[15, 8, 15]} 
+          fov={75}
         />
+        
+        {/* Dynamic Lighting */}
+        <ambientLight intensity={0.1} />
+        <pointLight 
+          position={[0, 15, 0]} 
+          intensity={2 + bassLevel * 3} 
+          color="#9E6BFF" 
+          distance={50}
+        />
+        <pointLight 
+          position={[20, 10, 20]} 
+          intensity={1 + bassLevel * 2} 
+          color="#35F0FF" 
+          distance={40}
+        />
+        <pointLight 
+          position={[-20, 10, -20]} 
+          intensity={1 + bassLevel * 2} 
+          color="#FF4FD8" 
+          distance={40}
+        />
+        
+        {/* Cosmic Environment */}
+        <Environment preset="night" />
+        <fog attach="fog" args={[new Color('#000510'), 20, 100]} />
 
-        {/* Environment */}
-        <Environment preset="night" background />
-        <fog attach="fog" args={[new Color('#0B1020'), 5, 50]} />
-
-        {/* 3D Components */}
+        {/* Galactic Components */}
         <Suspense fallback={null}>
-          <VinylRecord />
-          <SpectrumRing />
-          
-          {/* Platform */}
-          <mesh position={[0, -0.5, 0]} receiveShadow>
-            <cylinderGeometry args={[6, 6, 0.2, 32]} />
-            <meshPhysicalMaterial
-              color="#11162B"
-              metalness={0.8}
-              roughness={0.3}
-              emissive="#35F0FF"
-              emissiveIntensity={0.05}
-            />
-          </mesh>
+          <StarField />
+          <NebulaParticles />
+          <GalacticCore />
+          <FrequencyRings />
+          <EnergyBeams />
         </Suspense>
 
-        {/* Controls */}
+        {/* Enhanced Cosmic Environment */}
+
+        {/* Enhanced Controls */}
         <OrbitControls
-          enablePan={false}
+          enablePan={true}
           enableZoom={true}
           enableRotate={true}
-          maxDistance={20}
-          minDistance={3}
-          maxPolarAngle={Math.PI / 2}
+          maxDistance={50}
+          minDistance={5}
           autoRotate={true}
-          autoRotateSpeed={0.5}
+          autoRotateSpeed={beatDetected ? 1.5 : 0.3}
+          enableDamping={true}
+          dampingFactor={0.05}
         />
       </Canvas>
     </div>
