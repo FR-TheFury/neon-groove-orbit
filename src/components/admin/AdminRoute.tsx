@@ -8,6 +8,9 @@ interface AdminRouteProps {
 export default function AdminRoute({ children }: AdminRouteProps) {
   const { user, role, loading } = useAuth();
 
+  // Debug logs
+  console.log('AdminRoute - user:', user?.email, 'role:', role, 'loading:', loading);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -20,10 +23,12 @@ export default function AdminRoute({ children }: AdminRouteProps) {
   }
 
   if (!user) {
+    console.log('AdminRoute - No user, redirecting to /auth');
     return <Navigate to="/auth" replace />;
   }
 
   if (role !== 'admin') {
+    console.log('AdminRoute - User role is not admin:', role, 'redirecting to /');
     return <Navigate to="/" replace />;
   }
 

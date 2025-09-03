@@ -21,19 +21,22 @@ export function useAuth() {
 
   const fetchUserRole = async (userId: string): Promise<UserRole | null> => {
     try {
+      console.log('Fetching user role for:', userId);
+      
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user role:', error);
         return null;
       }
 
+      console.log('User role data:', data);
       return data?.role as UserRole || null;
     } catch (error) {
       console.error('Error fetching user role:', error);
@@ -69,13 +72,20 @@ export function useAuth() {
         if (user) {
           setTimeout(async () => {
             try {
+              console.log('Processing auth state change for user:', user.email);
+              
+              // Initialize user if needed
+              await supabase.rpc('initialize_user_if_needed');
+              
               // Try to assign admin role if this is the admin email
               if (user.email === 'frthefury@gmail.com') {
+                console.log('Assigning admin role to:', user.email);
                 await assignAdminRole();
               }
               
               // Fetch user role
               const role = await fetchUserRole(user.id);
+              console.log('Final role for user:', role);
               
               setAuthState(prev => ({
                 ...prev,
@@ -99,22 +109,38 @@ export function useAuth() {
     // Check for existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       const user = session?.user ?? null;
+      console.log('Initial session check - user:', user?.email);
       
       if (user) {
-        // Try to assign admin role if this is the admin email
-        if (user.email === 'frthefury@gmail.com') {
-          await assignAdminRole();
+        try {
+          // Initialize user if needed
+          await supabase.rpc('initialize_user_if_needed');
+          
+          // Try to assign admin role if this is the admin email
+          if (user.email === 'frthefury@gmail.com') {
+            console.log('Initial check - assigning admin role to:', user.email);
+            await assignAdminRole();
+          }
+          
+          // Fetch user role
+          const role = await fetchUserRole(user.id);
+          console.log('Initial check - final role for user:', role);
+          
+          setAuthState({
+            user,
+            session,
+            role,
+            loading: false
+          });
+        } catch (error) {
+          console.error('Error in initial session check:', error);
+          setAuthState({
+            user,
+            session,
+            role: null,
+            loading: false
+          });
         }
-        
-        // Fetch user role
-        const role = await fetchUserRole(user.id);
-        
-        setAuthState({
-          user,
-          session,
-          role,
-          loading: false
-        });
       } else {
         setAuthState({
           user: null,
