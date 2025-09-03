@@ -38,7 +38,7 @@ const AuthPage = () => {
 
     try {
       if (isSignUp) {
-        const redirectUrl = `${window.location.origin}/`;
+        const redirectUrl = `${window.location.origin}/neon-groove-orbit/`;
         
         const { error } = await supabase.auth.signUp({
           email,

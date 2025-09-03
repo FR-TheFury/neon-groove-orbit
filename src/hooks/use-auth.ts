@@ -55,24 +55,36 @@ export function useAuth() {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         const user = session?.user ?? null;
         
+        setAuthState(prev => ({
+          ...prev,
+          user,
+          session,
+          loading: false
+        }));
+
+        // Defer async operations to prevent deadlock
         if (user) {
-          // Try to assign admin role if this is the admin email
-          if (user.email === 'frthefury@gmail.com') {
-            await assignAdminRole();
-          }
-          
-          // Fetch user role
-          const role = await fetchUserRole(user.id);
-          
-          setAuthState({
-            user,
-            session,
-            role,
-            loading: false
-          });
+          setTimeout(async () => {
+            try {
+              // Try to assign admin role if this is the admin email
+              if (user.email === 'frthefury@gmail.com') {
+                await assignAdminRole();
+              }
+              
+              // Fetch user role
+              const role = await fetchUserRole(user.id);
+              
+              setAuthState(prev => ({
+                ...prev,
+                role
+              }));
+            } catch (error) {
+              console.error('Error handling auth state change:', error);
+            }
+          }, 0);
         } else {
           setAuthState({
             user: null,

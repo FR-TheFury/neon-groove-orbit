@@ -8,6 +8,7 @@ import Visualizer from "./pages/Visualizer";
 import AuthPage from "./components/auth/AuthPage";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import AdminRoute from "./components/admin/AdminRoute";
+import EmailConfirmed from "./pages/EmailConfirmed";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/email-confirmed" element={<EmailConfirmed />} />
           <Route path="/admin" element={
             <AdminRoute>
               <AdminDashboard />
