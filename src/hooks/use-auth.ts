@@ -55,41 +55,52 @@ export function useAuth() {
   useEffect(() => {
     let mounted = true;
 
-    const handleAuthStateChange = async (event: string, session: any) => {
+    const handleAuthStateChange = (event: string, session: Session | null) => {
       const user = session?.user ?? null;
       
       if (user && mounted) {
-        try {
-          // Initialize user if needed
-          await supabase.rpc('initialize_user_if_needed');
+        // Set basic auth state immediately to stop loading
+        setAuthState({
+          user,
+          session,
+          role: null, // Temporary
+          loading: false // Stop loading immediately
+        });
+        
+        // Defer database operations to avoid blocking auth flow
+        setTimeout(async () => {
+          if (!mounted) return;
           
-          // Try to assign admin role if this is the admin email
-          if (user.email === 'frthefury@gmail.com') {
-            await assignAdminRole();
+          try {
+            // Initialize user if needed
+            await supabase.rpc('initialize_user_if_needed');
+            
+            // Try to assign admin role if this is the admin email
+            if (user.email === 'frthefury@gmail.com') {
+              await assignAdminRole();
+            }
+            
+            // Fetch user role
+            const role = await fetchUserRole(user.id);
+            
+            if (mounted) {
+              setAuthState(prev => ({
+                ...prev,
+                role,
+                loading: false
+              }));
+            }
+          } catch (error) {
+            console.error('Error processing auth state change:', error);
+            if (mounted) {
+              setAuthState(prev => ({
+                ...prev,
+                role: null,
+                loading: false
+              }));
+            }
           }
-          
-          // Fetch user role
-          const role = await fetchUserRole(user.id);
-          
-          if (mounted) {
-            setAuthState({
-              user,
-              session,
-              role,
-              loading: false
-            });
-          }
-        } catch (error) {
-          console.error('Error processing auth state change:', error);
-          if (mounted) {
-            setAuthState({
-              user,
-              session,
-              role: null,
-              loading: false
-            });
-          }
-        }
+        }, 100); // Small delay to prevent blocking
       } else if (mounted) {
         setAuthState({
           user: null,
@@ -104,9 +115,9 @@ export function useAuth() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
     // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (mounted) {
-        await handleAuthStateChange('INITIAL_SESSION', session);
+        handleAuthStateChange('INITIAL_SESSION', session);
       }
     });
 

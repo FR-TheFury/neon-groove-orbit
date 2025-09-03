@@ -8,8 +8,8 @@ interface AdminRouteProps {
 export default function AdminRoute({ children }: AdminRouteProps) {
   const { user, role, loading } = useAuth();
 
-  // Show loading while checking auth and role
-  if (loading || (user && role === null)) {
+  // Show loading only during initial load
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
