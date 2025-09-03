@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuthStore } from '@/stores/auth';
+import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -16,7 +16,7 @@ interface FileUploaderProps {
 export default function FileUploader({ onUploadComplete }: FileUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {

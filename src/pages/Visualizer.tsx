@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuthStore } from '@/stores/auth';
+import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import Scene3D from '@/components/visualizer/Scene3D';
 import AudioControls from '@/components/visualizer/AudioControls';
@@ -18,7 +18,7 @@ interface Track {
 export default function Visualizer() {
   const { trackId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [track, setTrack] = useState<Track | null>(null);
   const [audioUrl, setAudioUrl] = useState<string>('');
