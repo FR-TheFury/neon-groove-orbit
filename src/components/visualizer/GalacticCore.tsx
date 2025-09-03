@@ -13,12 +13,12 @@ export default function GalacticCore() {
 
     const time = state.clock.elapsedTime;
     
-    // Ultra-fast rotation for immediate response
-    meshRef.current.rotation.y += 0.02 + smoothedBass * 0.15;
-    meshRef.current.rotation.z = smoothedBass * 0.8;
+    // Slow rotation synced with music
+    meshRef.current.rotation.y += 0.005 + smoothedBass * 0.02;
+    meshRef.current.rotation.z = smoothedBass * 0.3;
     
-    innerRef.current.rotation.y -= 0.03 + smoothedMid * 0.2;
-    innerRef.current.rotation.x = smoothedMid * 0.6;
+    innerRef.current.rotation.y -= 0.008 + smoothedMid * 0.03;
+    innerRef.current.rotation.x = smoothedMid * 0.2;
     
     // Instant scale response like 2D visualizers
     const coreScale = 1.6 + smoothedBass * 2 + (beatDetected ? 1 : 0);

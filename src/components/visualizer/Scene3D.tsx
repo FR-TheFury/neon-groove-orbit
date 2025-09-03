@@ -70,7 +70,7 @@ export default function Scene3D() {
           maxDistance={50}
           minDistance={5}
           autoRotate={true}
-          autoRotateSpeed={beatDetected ? 1.5 : 0.3}
+          autoRotateSpeed={beatDetected ? 0.3 : 0.1}
           enableDamping={true}
           dampingFactor={0.05}
         />

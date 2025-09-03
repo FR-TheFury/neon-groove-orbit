@@ -63,17 +63,17 @@ export default function FrequencyRings() {
     updateRing(midRingRef, smoothedMid, 6, 6);  
     updateRing(trebleRingRef, smoothedTreble, 8, 4);
     
-    // Fast rotation with immediate audio response
+    // Slow rotation synced with music
     if (bassRingRef.current) {
-      bassRingRef.current.rotation.y += 0.05 + smoothedBass * 0.2;
+      bassRingRef.current.rotation.y += 0.01 + smoothedBass * 0.05;
       bassRingRef.current.position.y = smoothedBass * 4;
     }
     if (midRingRef.current) {
-      midRingRef.current.rotation.y -= 0.04 + smoothedMid * 0.15;
+      midRingRef.current.rotation.y -= 0.008 + smoothedMid * 0.04;
       midRingRef.current.position.y = smoothedMid * 3;
     }
     if (trebleRingRef.current) {
-      trebleRingRef.current.rotation.y += 0.06 + smoothedTreble * 0.25;
+      trebleRingRef.current.rotation.y += 0.012 + smoothedTreble * 0.06;
       trebleRingRef.current.position.y = smoothedTreble * 2;
     }
   });
