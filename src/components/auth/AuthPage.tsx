@@ -1,26 +1,36 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { useAuthStore } from '@/stores/auth';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-export default function AuthPage() {
+const AuthPage = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { user, role } = useAuth();
   const { toast } = useToast();
-  const { user } = useAuthStore();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      if (role === 'admin') {
+        navigate("/admin");
+      } else if (role === 'user') {
+        navigate("/");
+      } else if (role === 'pending') {
+        // L'utilisateur est connecté mais son compte n'est pas encore approuvé
+        return;
+      }
     }
-  }, [user, navigate]);
+  }, [user, role, navigate]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,19 +38,24 @@ export default function AuthPage() {
 
     try {
       if (isSignUp) {
+        const redirectUrl = `${window.location.origin}/`;
+        
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`,
-          },
+            emailRedirectTo: redirectUrl,
+            data: {
+              display_name: email.split('@')[0]
+            }
+          }
         });
 
         if (error) throw error;
 
         toast({
-          title: "Sign up successful!",
-          description: "Please check your email to confirm your account.",
+          title: "Demande envoyée",
+          description: "Votre demande de création de compte a été envoyée. Un administrateur doit l'approuver avant que vous puissiez vous connecter.",
         });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -51,14 +66,15 @@ export default function AuthPage() {
         if (error) throw error;
 
         toast({
-          title: "Welcome back!",
-          description: "You've been signed in successfully.",
+          title: "Connexion réussie",
+          description: "Vous êtes maintenant connecté à votre compte.",
         });
       }
     } catch (error: any) {
+      console.error("Auth error:", error);
       toast({
-        title: "Authentication Error",
-        description: error.message,
+        title: "Erreur d'authentification",
+        description: error.message || "Une erreur est survenue lors de l'authentification.",
         variant: "destructive",
       });
     } finally {
@@ -66,63 +82,125 @@ export default function AuthPage() {
     }
   };
 
+  // Si l'utilisateur est connecté mais en attente d'approbation
+  if (user && role === 'pending') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="gradient-text">Compte en attente</CardTitle>
+            <CardDescription>
+              Votre demande de création de compte est en cours de traitement
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Votre compte a été créé mais doit être approuvé par un administrateur avant que vous puissiez accéder à l'application.
+              </AlertDescription>
+            </Alert>
+            
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-4">
+                Connecté en tant que : {user.email}
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={() => supabase.auth.signOut()}
+                className="w-full"
+              >
+                Se déconnecter
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 cyber-grid">
-      <Card className="w-full max-w-md p-8 glass">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-neon-cyan mb-2">
-            Neon Vinyl Visualizer
-          </h1>
-          <p className="text-muted-foreground">
-            {isSignUp ? 'Create your account' : 'Sign in to your account'}
-          </p>
-        </div>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-card/50 backdrop-blur-sm border-primary/20">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl gradient-text">
+            {isSignUp ? "Créer un compte" : "Se connecter"}
+          </CardTitle>
+          <CardDescription>
+            {isSignUp 
+              ? "Demander la création d'un nouveau compte" 
+              : "Connectez-vous à votre compte existant"
+            }
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleAuth} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="bg-background/50"
+                placeholder="votre@email.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Mot de passe</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="bg-background/50"
+                placeholder="••••••••"
+              />
+            </div>
+            
+            {isSignUp && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Votre demande sera examinée par un administrateur avant l'activation de votre compte.
+                </AlertDescription>
+              </Alert>
+            )}
 
-        <form onSubmit={handleAuth} className="space-y-6">
-          <div className="space-y-4">
-            <Input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="glass"
-            />
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="glass"
-            />
-          </div>
-
-          <Button
-            type="submit"
-            variant="neon-solid"
-            size="lg"
-            className="w-full"
-            disabled={loading}
-          >
-            {loading ? 'Processing...' : isSignUp ? 'Sign Up' : 'Sign In'}
-          </Button>
-
-          <div className="text-center">
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isSignUp ? "Création..." : "Connexion..."}
+                </>
+              ) : (
+                isSignUp ? "Demander un compte" : "Se connecter"
+              )}
+            </Button>
+          </form>
+          
+          <div className="mt-4 text-center">
             <Button
-              type="button"
-              variant="ghost"
+              variant="link"
               onClick={() => setIsSignUp(!isSignUp)}
-              className="text-neon-cyan hover:text-neon-magenta"
+              className="text-sm"
             >
               {isSignUp 
-                ? 'Already have an account? Sign in' 
-                : "Don't have an account? Sign up"
+                ? "Déjà un compte ? Se connecter" 
+                : "Pas de compte ? Demander un accès"
               }
             </Button>
           </div>
-        </form>
+        </CardContent>
       </Card>
     </div>
   );
-}
+};
+
+export default AuthPage;

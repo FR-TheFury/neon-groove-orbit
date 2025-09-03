@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@/stores/auth';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import FileUploader from '@/components/upload/FileUploader';
 import { supabase } from '@/integrations/supabase/client';
-import { Music, Sparkles, Zap, Users } from 'lucide-react';
+import { Music, Sparkles, Zap, Users, Settings, Shield } from 'lucide-react';
 
 interface Track {
   id: string;
@@ -15,19 +16,14 @@ interface Track {
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, initialize } = useAuthStore();
+  const { user, role, loading } = useAuth();
   const [recentTracks, setRecentTracks] = useState<Track[]>([]);
 
   useEffect(() => {
-    const cleanup = initialize();
-    return cleanup;
-  }, [initialize]);
-
-  useEffect(() => {
-    if (user) {
+    if (user && role === 'user') {
       loadRecentTracks();
     }
-  }, [user]);
+  }, [user, role]);
 
   const loadRecentTracks = async () => {
     try {
@@ -53,12 +49,58 @@ const Index = () => {
     navigate('/auth');
   };
 
+  const handleAdminAccess = () => {
+    navigate('/admin');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background cyber-grid">
-      {/* Hero Section */}
+      {/* Header with user info */}
       <section className="relative py-20 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <div className="space-y-6 mb-12">
+        <div className="max-w-6xl mx-auto">
+          {/* User status bar */}
+          {user && (
+            <div className="flex justify-between items-center mb-8">
+              <div className="flex items-center gap-4">
+                <Badge variant="secondary" className="text-sm">
+                  <Users className="w-4 h-4 mr-1" />
+                  {user.email}
+                </Badge>
+                {role && (
+                  <Badge variant={role === 'admin' ? 'default' : role === 'user' ? 'secondary' : 'outline'}>
+                    {role === 'admin' && <Shield className="w-4 h-4 mr-1" />}
+                    {role === 'admin' ? 'Administrateur' : 
+                     role === 'user' ? 'Utilisateur' : 'En attente'}
+                  </Badge>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {role === 'admin' && (
+                  <Button variant="outline" onClick={handleAdminAccess}>
+                    <Settings className="w-4 h-4 mr-1" />
+                    Administration
+                  </Button>
+                )}
+                <Button variant="ghost" onClick={() => supabase.auth.signOut()}>
+                  Se déconnecter
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          <div className="text-center">
+            <div className="space-y-6 mb-12">
             <h1 className="text-6xl font-bold bg-gradient-to-r from-neon-cyan via-neon-magenta to-neon-violet bg-clip-text text-transparent">
               Neon Vinyl Visualizer
             </h1>
@@ -98,7 +140,32 @@ const Index = () => {
           {/* Upload Section */}
           <div className="max-w-2xl mx-auto">
             {user ? (
-              <FileUploader onUploadComplete={handleUploadComplete} />
+              role === 'user' ? (
+                <FileUploader onUploadComplete={handleUploadComplete} />
+              ) : role === 'pending' ? (
+                <Card className="glass p-8 text-center">
+                  <Users className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
+                  <h3 className="text-xl font-semibold mb-4">Compte en attente</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Votre demande de création de compte est en cours de traitement par un administrateur.
+                  </p>
+                  <Badge variant="outline">Statut : En attente d'approbation</Badge>
+                </Card>
+              ) : role === 'admin' ? (
+                <Card className="glass p-8 text-center">
+                  <Shield className="w-16 h-16 mx-auto mb-4 text-neon-cyan" />
+                  <h3 className="text-xl font-semibold mb-4">Mode Administrateur</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Accédez au tableau de bord administrateur pour gérer les utilisateurs et les données.
+                  </p>
+                  <Button variant="default" size="lg" onClick={handleAdminAccess}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Tableau de bord Admin
+                  </Button>
+                </Card>
+              ) : (
+                <FileUploader onUploadComplete={handleUploadComplete} />
+              )
             ) : (
               <Card className="glass p-8 text-center">
                 <Users className="w-16 h-16 mx-auto mb-4 text-neon-cyan" />
@@ -114,7 +181,7 @@ const Index = () => {
           </div>
 
           {/* Recent Tracks */}
-          {user && recentTracks.length > 0 && (
+          {user && role === 'user' && recentTracks.length > 0 && (
             <div className="max-w-2xl mx-auto mt-12">
               <h3 className="text-lg font-semibold text-neon-magenta mb-4">
                 Recent Tracks
@@ -138,6 +205,7 @@ const Index = () => {
               </div>
             </div>
           )}
+          </div>
         </div>
       </section>
     </div>

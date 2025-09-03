@@ -184,6 +184,10 @@ export type Database = {
         Args: { request_id: string }
         Returns: undefined
       }
+      assign_admin_role: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
