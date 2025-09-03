@@ -54,18 +54,9 @@ export function useAuth() {
 
   useEffect(() => {
     let mounted = true;
-    let loadingTimeout: NodeJS.Timeout;
 
     const handleAuthStateChange = async (event: string, session: any) => {
       const user = session?.user ?? null;
-      
-      // Set a timeout to prevent infinite loading
-      if (loadingTimeout) clearTimeout(loadingTimeout);
-      loadingTimeout = setTimeout(() => {
-        if (mounted) {
-          setAuthState(prev => ({ ...prev, loading: false }));
-        }
-      }, 10000); // 10 second timeout
       
       if (user && mounted) {
         try {
@@ -77,16 +68,10 @@ export function useAuth() {
             await assignAdminRole();
           }
           
-          // Fetch user role with timeout
-          const rolePromise = fetchUserRole(user.id);
-          const timeoutPromise = new Promise<UserRole | null>((resolve) => {
-            setTimeout(() => resolve(null), 5000); // 5 second timeout for role fetch
-          });
-          
-          const role = await Promise.race([rolePromise, timeoutPromise]);
+          // Fetch user role
+          const role = await fetchUserRole(user.id);
           
           if (mounted) {
-            clearTimeout(loadingTimeout);
             setAuthState({
               user,
               session,
@@ -97,7 +82,6 @@ export function useAuth() {
         } catch (error) {
           console.error('Error processing auth state change:', error);
           if (mounted) {
-            clearTimeout(loadingTimeout);
             setAuthState({
               user,
               session,
@@ -107,7 +91,6 @@ export function useAuth() {
           }
         }
       } else if (mounted) {
-        clearTimeout(loadingTimeout);
         setAuthState({
           user: null,
           session: null,
