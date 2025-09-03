@@ -4,14 +4,14 @@ import { InstancedMesh, Object3D } from 'three';
 import { useAudioStore } from '@/stores/audio';
 
 const RING_COUNT = 3;
-const SEGMENTS_PER_RING = 64;
+const SEGMENTS_PER_RING = 48;
 
 export default function FrequencyRings() {
   const bassRingRef = useRef<InstancedMesh>(null);
   const midRingRef = useRef<InstancedMesh>(null);
   const trebleRingRef = useRef<InstancedMesh>(null);
   
-  const { frequencyData, bassLevel, midLevel, trebleLevel, beatDetected } = useAudioStore();
+  const { frequencyData, smoothedBass, smoothedMid, smoothedTreble, beatDetected } = useAudioStore();
   const dummy = useMemo(() => new Object3D(), []);
 
   const updateRing = (
@@ -59,27 +59,23 @@ export default function FrequencyRings() {
   useFrame((state) => {
     const time = state.clock.elapsedTime;
     
-    // Update each ring with different properties - more intense
-    updateRing(bassRingRef, bassLevel, 6, 6, "#FF4FD8"); // Increased multiplier
-    updateRing(midRingRef, midLevel, 8, 4, "#35F0FF");   // Increased multiplier  
-    updateRing(trebleRingRef, trebleLevel, 10, 3, "#9E6BFF"); // Increased multiplier
+    // Ultra-responsive ring updates
+    updateRing(bassRingRef, smoothedBass, 4.5, 5, "#FF4FD8");
+    updateRing(midRingRef, smoothedMid, 6.5, 4, "#35F0FF");
+    updateRing(trebleRingRef, smoothedTreble, 8.5, 3, "#9E6BFF");
     
-    // Rotate rings with audio influence
+    // Fluid rotation with enhanced audio response
     if (bassRingRef.current) {
-      const bassSpeed = 0.2 + bassLevel * 0.5;
-      bassRingRef.current.rotation.y = time * bassSpeed;
-      // Tilt with beat
-      bassRingRef.current.rotation.x = beatDetected ? 0.2 : 0;
+      bassRingRef.current.rotation.y += 0.03 + smoothedBass * 0.08;
+      bassRingRef.current.position.y = Math.sin(time * 3) * 1.2 + smoothedBass * 3;
     }
     if (midRingRef.current) {
-      const midSpeed = 0.15 + midLevel * 0.4;
-      midRingRef.current.rotation.y = -time * midSpeed;
-      midRingRef.current.rotation.z = Math.sin(time * 2) * midLevel * 0.3;
+      midRingRef.current.rotation.y -= 0.025 + smoothedMid * 0.06;
+      midRingRef.current.position.y = Math.cos(time * 2) * 1.0 + smoothedMid * 2.5;
     }
     if (trebleRingRef.current) {
-      const trebleSpeed = 0.1 + trebleLevel * 0.3;
-      trebleRingRef.current.rotation.y = time * trebleSpeed;
-      trebleRingRef.current.position.y = Math.sin(time * 3) * trebleLevel * 2;
+      trebleRingRef.current.rotation.y += 0.035 + smoothedTreble * 0.1;
+      trebleRingRef.current.position.y = Math.sin(time * 4) * 0.8 + smoothedTreble * 1.5;
     }
   });
 

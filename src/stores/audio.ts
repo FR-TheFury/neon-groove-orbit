@@ -13,6 +13,9 @@ interface AudioState {
   midLevel: number;
   trebleLevel: number;
   beatDetected: boolean;
+  smoothedBass: number;
+  smoothedMid: number;
+  smoothedTreble: number;
   
   // Actions
   setPlaying: (playing: boolean) => void;
@@ -37,6 +40,9 @@ export const useAudioStore = create<AudioState>((set, get) => ({
   midLevel: 0,
   trebleLevel: 0,
   beatDetected: false,
+  smoothedBass: 0,
+  smoothedMid: 0,
+  smoothedTreble: 0,
 
   setPlaying: (playing) => set({ isPlaying: playing }),
   setCurrentTime: (time) => set({ currentTime: time }),
@@ -55,9 +61,9 @@ export const useAudioStore = create<AudioState>((set, get) => ({
       const analyser = audioContext.createAnalyser();
       const source = audioContext.createMediaElementSource(audioElement);
       
-      // Higher resolution for better frequency analysis
-      analyser.fftSize = 2048;
-      analyser.smoothingTimeConstant = 0.8;
+      // Optimized for performance and responsiveness
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.2;
       
       source.connect(analyser);
       analyser.connect(audioContext.destination);
@@ -76,23 +82,23 @@ export const useAudioStore = create<AudioState>((set, get) => ({
   },
 
   updateFrequencyData: () => {
-    const { analyser, frequencyData } = get();
+    const { analyser, frequencyData, smoothedBass, smoothedMid, smoothedTreble } = get();
     if (analyser && frequencyData) {
       analyser.getByteFrequencyData(frequencyData);
       
-      // Calculate frequency bands
+      // Optimized frequency bands
       const bufferLength = frequencyData.length;
-      const bassEnd = Math.floor(bufferLength * 0.1);
+      const bassEnd = Math.floor(bufferLength * 0.15);
       const midEnd = Math.floor(bufferLength * 0.5);
       
       let bassSum = 0, midSum = 0, trebleSum = 0;
       
-      // Bass (0-10% of spectrum)
+      // Bass (0-15% of spectrum)
       for (let i = 0; i < bassEnd; i++) {
         bassSum += frequencyData[i];
       }
       
-      // Mid (10-50% of spectrum)
+      // Mid (15-50% of spectrum)
       for (let i = bassEnd; i < midEnd; i++) {
         midSum += frequencyData[i];
       }
@@ -106,10 +112,24 @@ export const useAudioStore = create<AudioState>((set, get) => ({
       const midLevel = midSum / (midEnd - bassEnd) / 255;
       const trebleLevel = trebleSum / (bufferLength - midEnd) / 255;
       
-      // Simple beat detection
-      const beatDetected = bassLevel > 0.7;
+      // Smooth interpolation for fluid motion
+      const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+      const newSmoothedBass = lerp(smoothedBass, bassLevel, 0.3);
+      const newSmoothedMid = lerp(smoothedMid, midLevel, 0.3);
+      const newSmoothedTreble = lerp(smoothedTreble, trebleLevel, 0.3);
       
-      set({ bassLevel, midLevel, trebleLevel, beatDetected });
+      // Enhanced beat detection
+      const beatDetected = bassLevel > 0.25 && bassLevel > smoothedBass * 1.4;
+      
+      set({ 
+        bassLevel, 
+        midLevel, 
+        trebleLevel, 
+        beatDetected,
+        smoothedBass: newSmoothedBass,
+        smoothedMid: newSmoothedMid,
+        smoothedTreble: newSmoothedTreble
+      });
     }
   },
 

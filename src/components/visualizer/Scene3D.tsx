@@ -14,7 +14,14 @@ export default function Scene3D() {
 
   return (
     <div className="w-full h-full">
-      <Canvas gl={{ antialias: true, alpha: true }}>
+      <Canvas gl={{ 
+        antialias: false, 
+        alpha: true, 
+        powerPreference: "high-performance",
+        stencil: false,
+        depth: true
+      }}
+      performance={{ min: 0.8 }}>
         <PerspectiveCamera 
           makeDefault 
           position={[15, 8, 15]} 

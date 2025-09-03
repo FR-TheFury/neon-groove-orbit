@@ -3,11 +3,11 @@ import { useFrame } from '@react-three/fiber';
 import { InstancedMesh, Object3D, Vector3 } from 'three';
 import { useAudioStore } from '@/stores/audio';
 
-const STAR_COUNT = 1000;
+const STAR_COUNT = 300;
 
 export default function StarField() {
   const meshRef = useRef<InstancedMesh>(null);
-  const { trebleLevel, midLevel } = useAudioStore();
+  const { smoothedTreble, smoothedMid } = useAudioStore();
 
   const dummy = useMemo(() => new Object3D(), []);
   
@@ -34,22 +34,23 @@ export default function StarField() {
     const time = state.clock.elapsedTime;
     
     stars.forEach((star, i) => {
-      // Move stars outward from center
-      const direction = star.position.clone().normalize();
-      star.position.add(direction.multiplyScalar(star.speed * (1 + trebleLevel)));
+      // Optimized movement calculation
+      const speedMultiplier = star.speed * (1 + smoothedTreble * 2);
+      star.position.x += Math.cos(star.position.x * 0.01) * speedMultiplier;
+      star.position.y += Math.sin(star.position.y * 0.01) * speedMultiplier;
+      star.position.z += Math.cos(star.position.z * 0.01) * speedMultiplier;
       
-      // Reset stars that are too far
-      if (star.position.length() > 50) {
-        star.position.set(
-          (Math.random() - 0.5) * 10,
-          (Math.random() - 0.5) * 10,
-          (Math.random() - 0.5) * 10
-        );
+      // Efficient boundary check
+      const distanceSquared = star.position.x * star.position.x + 
+                             star.position.y * star.position.y + 
+                             star.position.z * star.position.z;
+      if (distanceSquared > 2500) {
+        star.position.multiplyScalar(0.1);
       }
       
-      // Set position and scale
+      // Set position and scale with interpolation
       dummy.position.copy(star.position);
-      const scale = star.size * (1 + midLevel * 0.5);
+      const scale = star.size * (0.8 + smoothedMid * 1.2);
       dummy.scale.setScalar(scale);
       
       // Add slight rotation
@@ -68,7 +69,7 @@ export default function StarField() {
 
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, STAR_COUNT]}>
-      <sphereGeometry args={[0.05, 4, 4]} />
+      <sphereGeometry args={[0.05, 3, 3]} />
       <meshBasicMaterial
         color="#FFFFFF"
         transparent

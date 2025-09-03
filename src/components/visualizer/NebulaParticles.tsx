@@ -3,11 +3,11 @@ import { useFrame } from '@react-three/fiber';
 import { InstancedMesh, Object3D, Color } from 'three';
 import { useAudioStore } from '@/stores/audio';
 
-const PARTICLE_COUNT = 500;
+const PARTICLE_COUNT = 200;
 
 export default function NebulaParticles() {
   const meshRef = useRef<InstancedMesh>(null);
-  const { bassLevel, midLevel, trebleLevel, frequencyData } = useAudioStore();
+  const { smoothedBass, smoothedMid, frequencyData } = useAudioStore();
 
   const dummy = useMemo(() => new Object3D(), []);
   const tempColor = useMemo(() => new Color(), []);
@@ -45,18 +45,22 @@ export default function NebulaParticles() {
       // Get frequency data for this particle
       const amplitude = frequencyData[particle.freqIndex] / 255;
       
-      // Update angle for orbital motion
-      particle.angle += particle.speed * (1 + bassLevel * 2);
+      // Optimized orbital motion
+      particle.angle += particle.speed * (1 + smoothedBass * 3);
       
-      // Calculate position with frequency-based displacement
-      const x = Math.cos(particle.angle) * (particle.radius + amplitude * 5);
-      const z = Math.sin(particle.angle) * (particle.radius + amplitude * 5);
-      const y = particle.originalPosition.y + Math.sin(time * 2 + particle.angle) * 2 + amplitude * 3;
+      // Pre-calculated trigonometric values
+      const cosAngle = Math.cos(particle.angle);
+      const sinAngle = Math.sin(particle.angle);
+      const radiusWithAmp = particle.radius + amplitude * 3;
+      
+      const x = cosAngle * radiusWithAmp;
+      const z = sinAngle * radiusWithAmp;
+      const y = particle.originalPosition.y + Math.sin(time + particle.angle) * 1.5 + amplitude * 2;
       
       dummy.position.set(x, y, z);
       
-      // Scale based on audio
-      const scale = particle.size * (0.5 + amplitude * 1.5);
+      // Optimized scaling
+      const scale = particle.size * (0.6 + amplitude + smoothedMid * 0.8);
       dummy.scale.setScalar(scale);
       
       // Rotation
@@ -86,7 +90,7 @@ export default function NebulaParticles() {
 
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, PARTICLE_COUNT]}>
-      <sphereGeometry args={[0.1, 8, 8]} />
+      <sphereGeometry args={[0.1, 4, 4]} />
       <meshPhysicalMaterial
         transparent
         opacity={0.7}
